@@ -24,6 +24,20 @@ tqdm
 transformers
 ```
 
+## Model Checkpoint
+
+The delta weights on the three datasets can be downloaded from huggingface hub ([Instruments](https://huggingface.co/bwzheng0324/lc-rec-instruments-delta), [Arts](https://huggingface.co/bwzheng0324/lc-rec-arts-delta), [Games](https://huggingface.co/bwzheng0324/lc-rec-games-delta)). After downloading, you can add our deltas to the original LLaMA weights to obtain LC-Rec weights:
+
+1. Get the original [LLaMA](https://huggingface.co/huggyllama/llama-7b) weights.
+2. Use the following scripts to get LC-Rec weights by applying our delta.
+
+```shell
+python -m convert/merge_delta.py \
+    --base-model-path /path/to/llama-7b \
+    --target-model-path /path/output/lc-rec \
+    --delta-path bwzheng0324/lc-rec-games-delta
+```
+
 ## Dataset
 
 We use three datasets in our paper, all of which have been uploaded to [Google Drive](https://drive.google.com/drive/folders/1RcJ2M1l5zWPHYuGd9l5Gibcs5w5aI3y6?usp=sharing) 
