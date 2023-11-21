@@ -2,7 +2,7 @@
 
 This is the official PyTorch implementation for the paper:
 
-> Adapting Large Language Models by Integrating Collaborative Semantics for Recommendation
+> [Adapting Large Language Models by Integrating Collaborative Semantics for Recommendation](https://arxiv.org/abs/2311.09049)
 
 ## Overview
 
