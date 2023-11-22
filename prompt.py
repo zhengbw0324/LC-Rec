@@ -228,7 +228,7 @@ prompt["response"] = "{item}"
 item2index_prompt.append(prompt)
 
 # ========================================================
-# Title and Description to Index
+# Title and Description to index
 
 #####——12
 prompt = {}
@@ -368,7 +368,7 @@ index2item_prompt.append(prompt)
 
 
 # ========================================================
-# Index to Title and Description
+# index to Title and Description
 
 #####——12
 prompt = {}
