@@ -12,7 +12,7 @@ from models.rqvae import RQVAE
 from trainer import  Trainer
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="RQ-VAE")
+    parser = argparse.ArgumentParser(description="Index")
 
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
     parser.add_argument('--epochs', type=int, default=5000, help='number of epochs')
