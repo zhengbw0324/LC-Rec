@@ -59,43 +59,44 @@ def generate_item_embedding(args, item_text_list, tokenizer, model, word_drop_ra
 
     embeddings = []
     start, batch_size = 0, 1
-    while start < len(order_texts):
-        if (start+1)%100==0:
-            print("==>",start+1)
-        field_texts = order_texts[start: start + batch_size]
-        # print(field_texts)
-        field_texts = zip(*field_texts)
-
-        field_embeddings = []
-        for sentences in field_texts:
-            sentences = list(sentences)
-            # print(sentences)
-            if word_drop_ratio > 0:
-                print(f'Word drop with p={word_drop_ratio}')
-                new_sentences = []
-                for sent in sentences:
-                    new_sent = []
-                    sent = sent.split(' ')
-                    for wd in sent:
-                        rd = random.random()
-                        if rd > word_drop_ratio:
-                            new_sent.append(wd)
-                    new_sent = ' '.join(new_sent)
-                    new_sentences.append(new_sent)
-                sentences = new_sentences
-            encoded_sentences = tokenizer(sentences, max_length=args.max_sent_len,
-                                          truncation=True, return_tensors='pt',padding="longest").to(args.device)
-            outputs = model(input_ids=encoded_sentences.input_ids,
-                            attention_mask=encoded_sentences.attention_mask)
-
-            masked_output = outputs.last_hidden_state * encoded_sentences['attention_mask'].unsqueeze(-1)
-            mean_output = masked_output.sum(dim=1) / encoded_sentences['attention_mask'].sum(dim=-1, keepdim=True)
-            mean_output = mean_output.detach().cpu()
-            field_embeddings.append(mean_output)
-
-        field_mean_embedding = torch.stack(field_embeddings, dim=0).mean(dim=0)
-        embeddings.append(field_mean_embedding)
-        start += batch_size
+    with torch.no_grad():
+        while start < len(order_texts):
+            if (start+1)%100==0:
+                print("==>",start+1)
+            field_texts = order_texts[start: start + batch_size]
+            # print(field_texts)
+            field_texts = zip(*field_texts)
+    
+            field_embeddings = []
+            for sentences in field_texts:
+                sentences = list(sentences)
+                # print(sentences)
+                if word_drop_ratio > 0:
+                    print(f'Word drop with p={word_drop_ratio}')
+                    new_sentences = []
+                    for sent in sentences:
+                        new_sent = []
+                        sent = sent.split(' ')
+                        for wd in sent:
+                            rd = random.random()
+                            if rd > word_drop_ratio:
+                                new_sent.append(wd)
+                        new_sent = ' '.join(new_sent)
+                        new_sentences.append(new_sent)
+                    sentences = new_sentences
+                encoded_sentences = tokenizer(sentences, max_length=args.max_sent_len,
+                                              truncation=True, return_tensors='pt',padding="longest").to(args.device)
+                outputs = model(input_ids=encoded_sentences.input_ids,
+                                attention_mask=encoded_sentences.attention_mask)
+    
+                masked_output = outputs.last_hidden_state * encoded_sentences['attention_mask'].unsqueeze(-1)
+                mean_output = masked_output.sum(dim=1) / encoded_sentences['attention_mask'].sum(dim=-1, keepdim=True)
+                mean_output = mean_output.detach().cpu()
+                field_embeddings.append(mean_output)
+    
+            field_mean_embedding = torch.stack(field_embeddings, dim=0).mean(dim=0)
+            embeddings.append(field_mean_embedding)
+            start += batch_size
 
     embeddings = torch.cat(embeddings, dim=0).numpy()
     print('Embeddings shape: ', embeddings.shape)
