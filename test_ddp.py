@@ -71,7 +71,6 @@ def test_ddp(args):
     test_data = load_test_dataset(args)
     ddp_sampler = DistributedSampler(test_data, num_replicas=world_size, rank=local_rank, drop_last=True)
 
-    test_data = load_test_dataset(args)
     collator = TestCollator(args, tokenizer)
     all_items = test_data.get_all_items()
 
