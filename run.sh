@@ -6,7 +6,7 @@ BASE_MODEL= huggyllama/llama-7b
 DATA_PATH=./data
 OUTPUT_DIR=./ckpt/$DATASET/
 
-torchrun --nproc_per_node=8 --master_port=3324 finetune.py \
+torchrun --nproc_per_node=8 --master_port=23324 finetune.py \
     --base_model $BASE_MODEL \
     --output_dir $OUTPUT_DIR \
     --dataset $DATASET \
@@ -40,7 +40,7 @@ BASE_MODEL= huggyllama/llama-7b
 DATA_PATH=./data
 OUTPUT_DIR=./ckpt/$DATASET/
 
-torchrun --nproc_per_node=8 --master_port=3324 finetune.py \
+torchrun --nproc_per_node=8 --master_port=13324 finetune.py \
     --base_model $BASE_MODEL \
     --output_dir $OUTPUT_DIR \
     --dataset $DATASET \
@@ -73,7 +73,7 @@ BASE_MODEL= huggyllama/llama-7b
 DATA_PATH=./data
 OUTPUT_DIR=./ckpt/$DATASET/
 
-torchrun --nproc_per_node=8 --master_port=3324 finetune.py \
+torchrun --nproc_per_node=8 --master_port=33324 finetune.py \
     --base_model $BASE_MODEL \
     --output_dir $OUTPUT_DIR \
     --dataset $DATASET \
