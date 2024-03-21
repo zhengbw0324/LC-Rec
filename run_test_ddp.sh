@@ -3,7 +3,7 @@
 
 DATASET=Games
 DATA_PATH=./data
-OUTPUT_DIR=./ckpt/$DATASET/
+CKPT_PATH=./ckpt/$DATASET/
 RESULTS_FILE=./results/$DATASET/xxx.json
 
 torchrun --nproc_per_node=8 --master_port=23324 test_ddp.py \
