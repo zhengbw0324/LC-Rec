@@ -2,7 +2,7 @@
 
 DATASET=Games
 DATA_PATH=./data
-OUTPUT_DIR=./ckpt/$DATASET/
+CKPT_PATH=./ckpt/$DATASET/
 RESULTS_FILE=./results/$DATASET/xxx.json
 
 python test.py \
