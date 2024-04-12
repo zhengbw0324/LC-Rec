@@ -19,6 +19,7 @@ class RQVAE(nn.Module):
                  bn=False,
                  loss_type="mse",
                  quant_loss_weight=1.0,
+                 beta=0.25,
                  kmeans_init=False,
                  kmeans_iters=100,
                  # sk_epsilons=[0,0,0.003,0.01]],
@@ -36,6 +37,7 @@ class RQVAE(nn.Module):
         self.bn = bn
         self.loss_type = loss_type
         self.quant_loss_weight=quant_loss_weight
+        self.beta = beta
         self.kmeans_init = kmeans_init
         self.kmeans_iters = kmeans_iters
         self.sk_epsilons = sk_epsilons
@@ -46,6 +48,7 @@ class RQVAE(nn.Module):
                                  dropout=self.dropout_prob,bn=self.bn)
 
         self.rq = ResidualVectorQuantizer(num_emb_list, e_dim,
+                                          beta=self.beta,
                                           kmeans_init = self.kmeans_init,
                                           kmeans_iters = self.kmeans_iters,
                                           sk_epsilons=self.sk_epsilons,

@@ -21,8 +21,10 @@ class MLPLayers(nn.Module):
         ):
             mlp_modules.append(nn.Dropout(p=self.dropout))
             mlp_modules.append(nn.Linear(input_size, output_size))
-            if self.use_bn:
+
+            if self.use_bn and idx != (len(self.layers)-2):
                 mlp_modules.append(nn.BatchNorm1d(num_features=output_size))
+
             activation_func = activation_layer(self.activation, output_size)
             if activation_func is not None and idx != (len(self.layers)-2):
                 mlp_modules.append(activation_func)

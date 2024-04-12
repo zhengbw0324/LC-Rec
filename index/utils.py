@@ -32,5 +32,6 @@ def get_local_time():
 
     return cur
 
-
-
+def delete_file(filename):
+    if os.path.exists(filename):
+        os.remove(filename)

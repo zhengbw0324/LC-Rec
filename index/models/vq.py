@@ -8,7 +8,7 @@ class VectorQuantizer(nn.Module):
 
     def __init__(self, n_e, e_dim,
                  beta = 0.25, kmeans_init = False, kmeans_iters = 10,
-                 sk_epsilon=0.01, sk_iters=100):
+                 sk_epsilon=0.003, sk_iters=100,):
         super().__init__()
         self.n_e = n_e
         self.e_dim = e_dim
@@ -73,13 +73,11 @@ class VectorQuantizer(nn.Module):
             2 * torch.matmul(latent, self.embedding.weight.t())
         if not use_sk or self.sk_epsilon <= 0:
             indices = torch.argmin(d, dim=-1)
-            # print("=======",self.sk_epsilon)
         else:
-            # print("++++++++",self.sk_epsilon)
             d = self.center_distance_for_constraint(d)
             d = d.double()
-            Q = sinkhorn_algorithm(d,self.sk_epsilon,self.sk_iters)
-            # print(Q.sum(0)[:10])
+            Q = sinkhorn_algorithm(d, self.sk_epsilon, self.sk_iters)
+
             if torch.isnan(Q).any() or torch.isinf(Q).any():
                 print(f"Sinkhorn Algorithm returns nan/inf values.")
             indices = torch.argmax(Q, dim=-1)

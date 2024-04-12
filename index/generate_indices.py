@@ -46,7 +46,7 @@ ckpt_path = "/zhengbowen/rqvae_ckpt/xxxx"
 output_dir = f"/zhengbowen/data/{dataset}/"
 output_file = f"{dataset}.index.json"
 output_file = os.path.join(output_dir,output_file)
-device = torch.device("cuda:1")
+device = torch.device("cuda:0")
 
 ckpt = torch.load(ckpt_path, map_location=torch.device('cpu'))
 args = ckpt["args"]

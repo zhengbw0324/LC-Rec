@@ -5,21 +5,31 @@ import torch
 from time import time
 from torch import optim
 from tqdm import tqdm
+from transformers import get_linear_schedule_with_warmup, get_constant_schedule_with_warmup
 
-from utils import ensure_dir,set_color,get_local_time
+from utils import ensure_dir,set_color,get_local_time,delete_file
 import os
 
+import heapq
 class Trainer(object):
 
-    def __init__(self, args, model):
+    def __init__(self, args, model, data_num):
         self.args = args
         self.model = model
         self.logger = logging.getLogger()
 
         self.lr = args.lr
         self.learner = args.learner
+        self.lr_scheduler_type = args.lr_scheduler_type
+
         self.weight_decay = args.weight_decay
         self.epochs = args.epochs
+        self.warmup_steps = args.warmup_epochs * data_num
+        self.max_steps = args.epochs * data_num
+
+        self.save_limit = args.save_limit
+        self.best_save_heap = []
+        self.newest_save_queue = []
         self.eval_step = min(args.eval_step, self.epochs)
         self.device = args.device
         self.device = torch.device(self.device)
@@ -33,6 +43,7 @@ class Trainer(object):
         self.best_loss_ckpt = "best_loss_model.pth"
         self.best_collision_ckpt = "best_collision_model.pth"
         self.optimizer = self._build_optimizer()
+        self.scheduler = self._get_scheduler()
         self.model = self.model.to(self.device)
 
     def _build_optimizer(self):
@@ -68,9 +79,21 @@ class Trainer(object):
             )
             optimizer = optim.Adam(params, lr=learning_rate)
         return optimizer
+
+    def _get_scheduler(self):
+        if self.lr_scheduler_type.lower() == "linear":
+            lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer,
+                                                           num_warmup_steps=self.warmup_steps,
+                                                           num_training_steps=self.max_steps)
+        else:
+            lr_scheduler = get_constant_schedule_with_warmup(optimizer=self.optimizer,
+                                                             num_warmup_steps=self.warmup_steps)
+
+        return lr_scheduler
     def _check_nan(self, loss):
         if torch.isnan(loss):
             raise ValueError("Training loss is nan")
+
 
     def _train_epoch(self, train_data, epoch_idx):
 
@@ -92,7 +115,10 @@ class Trainer(object):
             loss, loss_recon = self.model.compute_loss(out, rq_loss, xs=data)
             self._check_nan(loss)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
             self.optimizer.step()
+            self.scheduler.step()
+            # print(self.scheduler.get_last_lr())
             total_loss += loss.item()
             total_recon_loss += loss_recon.item()
 
@@ -109,6 +135,7 @@ class Trainer(object):
                 ncols=100,
                 desc=set_color(f"Evaluate   ", "pink"),
             )
+
         indices_set = set()
         num_sample = 0
         for batch_idx, data in enumerate(iter_data):
@@ -120,7 +147,7 @@ class Trainer(object):
                 code = "-".join([str(int(_)) for _ in index])
                 indices_set.add(code)
 
-        collision_rate = (num_sample - len(indices_set))/num_sample
+        collision_rate = (num_sample - len(list(indices_set)))/num_sample
 
         return collision_rate
 
@@ -141,6 +168,8 @@ class Trainer(object):
         self.logger.info(
             set_color("Saving current", "blue") + f": {ckpt_path}"
         )
+
+        return ckpt_path
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, loss, recon_loss):
         train_loss_output = (
@@ -169,14 +198,15 @@ class Trainer(object):
             )
             self.logger.info(train_loss_output)
 
-            if train_loss < self.best_loss:
-                self.best_loss = train_loss
-                # self._save_checkpoint(epoch=epoch_idx,ckpt_file=self.best_loss_ckpt)
 
             # eval
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
                 collision_rate = self._valid_epoch(data)
+
+                if train_loss < self.best_loss:
+                    self.best_loss = train_loss
+                    self._save_checkpoint(epoch=epoch_idx, ckpt_file=self.best_loss_ckpt)
 
                 if collision_rate < self.best_collision_rate:
                     self.best_collision_rate = collision_rate
@@ -198,8 +228,24 @@ class Trainer(object):
                 ) % (epoch_idx, valid_end_time - valid_start_time, collision_rate)
 
                 self.logger.info(valid_score_output)
-                if epoch_idx>1000:
-                    self._save_checkpoint(epoch_idx, collision_rate=collision_rate)
+                ckpt_path = self._save_checkpoint(epoch_idx, collision_rate=collision_rate)
+                now_save = (-collision_rate, ckpt_path)
+                if len(self.newest_save_queue) < self.save_limit:
+                    self.newest_save_queue.append(now_save)
+                    heapq.heappush(self.best_save_heap, now_save)
+                else:
+                    old_save = self.newest_save_queue.pop(0)
+                    self.newest_save_queue.append(now_save)
+                    if collision_rate < -self.best_save_heap[0][0]:
+                        bad_save = heapq.heappop(self.best_save_heap)
+                        heapq.heappush(self.best_save_heap, now_save)
+
+                        if bad_save not in self.newest_save_queue:
+                            delete_file(bad_save[1])
+
+                    if old_save not in self.best_save_heap:
+                        delete_file(old_save[1])
+
 
 
         return self.best_loss, self.best_collision_rate
